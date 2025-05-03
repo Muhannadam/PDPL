@@ -1,0 +1,5 @@
+streamlit
+faiss-cpu
+sentence-transformers
+huggingface-hub
+langchain[hub]==0.1.14
