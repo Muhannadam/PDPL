@@ -1,115 +1,231 @@
-import os
 import streamlit as st
 
-from rag_engine import RAGEngine
+from config import AppConfig
+from rag_core import create_rag_chain, answer_question
 
 
+# =========================================================
+# Page config
+# =========================================================
 st.set_page_config(
-    page_title="RAG Knowledge Assistant",
-    page_icon="🧠",
+    page_title="PDPL Legal Assistant",
+    page_icon="⚖️",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.markdown("""
-<style>
-.main-title {
-    font-size: 2.4rem;
-    font-weight: 800;
-    margin-bottom: 0.2rem;
-}
-.subtitle {
-    color: #777;
-    font-size: 1.05rem;
-    margin-bottom: 2rem;
-}
-.answer-box {
-    padding: 1.2rem;
-    border-radius: 14px;
-    background: #f7f7f9;
-    border: 1px solid #e5e5e5;
-}
-.source-box {
-    padding: 0.9rem;
-    border-radius: 12px;
-    background: #ffffff;
-    border: 1px solid #e8e8e8;
-    margin-bottom: 0.7rem;
-}
-</style>
-""", unsafe_allow_html=True)
 
-
-def get_api_key():
-    try:
-        return st.secrets["GROQ_API_KEY"]
-    except Exception:
-        return os.getenv("GROQ_API_KEY")
-
-
-@st.cache_resource
-def load_engine(api_key):
-    return RAGEngine(api_key)
-
-
-st.markdown('<div class="main-title">🧠 RAG Knowledge Assistant</div>', unsafe_allow_html=True)
+# =========================================================
+# CSS
+# =========================================================
 st.markdown(
-    '<div class="subtitle">اسأل ملفات Markdown الخاصة بك باستخدام FAISS + Groq + Streamlit</div>',
+    """
+    <style>
+    html, body, [class*="css"] {
+        direction: rtl;
+        text-align: right;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    }
+
+    .main-title {
+        font-size: 2.1rem;
+        font-weight: 800;
+        margin-bottom: 0.25rem;
+    }
+
+    .sub-title {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    .source-box {
+        direction: ltr;
+        text-align: left;
+        background-color: #f7f7f9;
+        padding: 0.75rem;
+        border-radius: 0.6rem;
+        border: 1px solid #e5e5e5;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+    }
+
+    .warning-box {
+        background-color: #fff8e1;
+        border: 1px solid #ffe082;
+        border-radius: 0.6rem;
+        padding: 0.8rem;
+        margin-top: 1rem;
+        color: #5d4037;
+    }
+
+    .stChatMessage {
+        direction: rtl;
+        text-align: right;
+    }
+    </style>
+    """,
     unsafe_allow_html=True,
 )
 
-api_key = get_api_key()
 
-if not api_key:
-    st.error("لم يتم العثور على GROQ_API_KEY. أضفه في .streamlit/secrets.toml أو كمتغير بيئة.")
-    st.stop()
+# =========================================================
+# Cached chain
+# =========================================================
+@st.cache_resource(show_spinner=False)
+def get_chain():
+    config = AppConfig()
+    return create_rag_chain(config)
 
-engine = load_engine(api_key)
 
+# =========================================================
+# Sidebar
+# =========================================================
 with st.sidebar:
-    st.header("⚙️ الإعدادات")
-    top_k = st.slider("عدد المقاطع المسترجعة", 1, 10, 5)
-    show_sources = st.toggle("إظهار المقاطع المسترجعة", value=True)
+    st.title("⚖️ PDPL Assistant")
 
-    st.divider()
-    st.caption("الموديل: llama-3.3-70b-versatile")
-    st.caption("البحث: FAISS")
-    st.caption("Embeddings: all-MiniLM-L6-v2")
+    st.markdown("### الإعدادات")
+    st.write("النظام يستخدم FAISS index المحفوظ مسبقًا، ولا يعيد بناء الفهرس.")
+
+    config = AppConfig()
+
+    st.code(
+        f"""Embedding model:
+{config.embedding_model}
+
+Groq model:
+{config.groq_model}
+
+retrieval_k:
+{config.retrieval_k}
+
+final_max_sources:
+{config.final_max_sources}
+""",
+        language="text",
+    )
+
+    show_sources = st.toggle("إظهار المصادر", value=True)
+    show_disclaimer = st.toggle("إظهار تنبيه الاستخدام", value=True)
+
+    if st.button("مسح المحادثة"):
+        st.session_state.messages = []
+        st.rerun()
 
 
+# =========================================================
+# Header
+# =========================================================
+st.markdown(
+    """
+    <div class="main-title">مساعد قانوني لنظام حماية البيانات الشخصية السعودي</div>
+    <div class="sub-title">
+    اسأل عن محتوى الوثائق المرفوعة، وسيجيب النظام فقط بناءً على السياق المسترجع من الفهرس.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+if show_disclaimer:
+    st.markdown(
+        """
+        <div class="warning-box">
+        هذا النظام مساعد بحثي وليس بديلاً عن الاستشارة القانونية المهنية.
+        النتائج تعتمد على الوثائق المفهرسة فقط.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# =========================================================
+# Session state
+# =========================================================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+# =========================================================
+# Load chain
+# =========================================================
+try:
+    chain = get_chain()
+except Exception as exc:
+    st.error("تعذر تحميل النظام.")
+    st.exception(exc)
+    st.stop()
 
 
-query = st.chat_input("اكتب سؤالك هنا...")
+# =========================================================
+# Render history
+# =========================================================
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if query:
-    st.session_state.messages.append({"role": "user", "content": query})
-
-    with st.chat_message("user"):
-        st.markdown(query)
-
-    with st.chat_message("assistant"):
-        with st.spinner("أبحث في الملفات وأجهز الإجابة..."):
-            answer, chunks = engine.answer(query, top_k=top_k)
-
-        st.markdown(f'<div class="answer-box">{answer}</div>', unsafe_allow_html=True)
-
-        if show_sources:
-            with st.expander("📚 المقاطع المسترجعة"):
-                for i, chunk in enumerate(chunks, start=1):
+        if (
+            message["role"] == "assistant"
+            and show_sources
+            and message.get("sources")
+        ):
+            with st.expander("المصادر"):
+                for source in message["sources"]:
                     st.markdown(
-                        f"""
-<div class="source-box">
-<b>المقطع {i}</b> — Score: {chunk['score']:.4f}<br><br>
-{chunk['text'][:1200]}
-</div>
-""",
+                        f'<div class="source-box">{source}</div>',
                         unsafe_allow_html=True,
                     )
 
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+
+# =========================================================
+# Input
+# =========================================================
+user_query = st.chat_input("اكتب سؤالك هنا...")
+
+if user_query:
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": user_query,
+        }
+    )
+
+    with st.chat_message("user"):
+        st.markdown(user_query)
+
+    with st.chat_message("assistant"):
+        with st.spinner("جاري البحث في الوثائق..."):
+            try:
+                result = answer_question(user_query, chain=chain)
+                answer = result["answer"]
+                sources = result["sources"]
+
+                st.markdown(answer)
+
+                if show_sources and sources:
+                    with st.expander("المصادر"):
+                        for source in sources:
+                            st.markdown(
+                                f'<div class="source-box">{source}</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": answer,
+                        "sources": sources,
+                    }
+                )
+
+            except Exception as exc:
+                error_msg = "حدث خطأ أثناء معالجة السؤال."
+                st.error(error_msg)
+                st.exception(exc)
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": error_msg,
+                        "sources": [],
+                    }
+                )
