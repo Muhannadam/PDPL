@@ -1,7 +1,12 @@
 import os
 import re
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
+try:
+    import streamlit as st
+except Exception:
+    st = None
 
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,54 +20,48 @@ from langchain_groq import ChatGroq
 from config import AppConfig
 
 
-# =========================================================
-# Logging
-# =========================================================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
-logger = logging.getLogger("pdpl_streamlit")
+logger = logging.getLogger("pdpl_rag")
 
 
-# =========================================================
-# Secrets
-# =========================================================
 def get_secret(key: str) -> str:
     """
-    Priority:
-    1. Environment variable
-    2. Streamlit secrets, if running inside Streamlit
+    يقرأ المفتاح من Streamlit Secrets أو Environment Variables.
+    لا تضع GROQ_API_KEY داخل GitHub.
     """
     value = os.getenv(key)
     if value:
         return value
 
-    try:
-        import streamlit as st
-        if key in st.secrets:
-            return st.secrets[key]
-    except Exception:
-        pass
+    if st is not None:
+        try:
+            if key in st.secrets:
+                return st.secrets[key]
+        except Exception:
+            pass
 
     raise ValueError(f"Missing secret: {key}")
 
 
-# =========================================================
-# Text cleanup — مطابق لكود Colab
-# =========================================================
 def clean_text(text: str) -> str:
+    """
+    مطابق لكود Colab.
+    لا تغير هذه الدالة إذا تريد نفس النتائج.
+    """
     text = text.replace("\n", " ")
     text = re.sub(r"\s+", " ", text)
     text = re.sub(r"-\s*\d+\b", "", text)
     return text.strip()
 
 
-# =========================================================
-# Retrieval helpers — مطابقة لكود Colab
-# =========================================================
 def deduplicate_documents(docs: List[Document]) -> List[Document]:
+    """
+    مطابق لكود Colab.
+    """
     seen = set()
     unique_docs = []
 
@@ -73,6 +72,7 @@ def deduplicate_documents(docs: List[Document]) -> List[Document]:
             d.metadata.get("article"),
             d.page_content.strip(),
         )
+
         if key not in seen:
             seen.add(key)
             unique_docs.append(d)
@@ -82,8 +82,11 @@ def deduplicate_documents(docs: List[Document]) -> List[Document]:
 
 def rank_and_limit_documents(
     docs: List[Document],
-    max_sources: int = 4
+    max_sources: int = 4,
 ) -> List[Document]:
+    """
+    مطابق لكود Colab.
+    """
     selected = []
     seen_groups = set()
 
@@ -104,6 +107,9 @@ def rank_and_limit_documents(
 
 
 def format_sources(docs: List[Document]) -> List[str]:
+    """
+    مطابق لكود Colab.
+    """
     sources = []
 
     for d in docs:
@@ -123,6 +129,9 @@ def format_sources(docs: List[Document]) -> List[str]:
 
 
 def docs_to_context(docs: List[Document]) -> str:
+    """
+    مطابق لكود Colab.
+    """
     blocks = []
 
     for d in docs:
@@ -132,10 +141,10 @@ def docs_to_context(docs: List[Document]) -> str:
     return "\n\n".join(blocks)
 
 
-# =========================================================
-# Load embeddings + FAISS
-# =========================================================
 def get_embeddings(config: AppConfig) -> HuggingFaceEmbeddings:
+    """
+    نفس embedding model ونفس normalize_embeddings.
+    """
     return HuggingFaceEmbeddings(
         model_name=config.embedding_model,
         model_kwargs={"device": "cpu"},
@@ -144,15 +153,17 @@ def get_embeddings(config: AppConfig) -> HuggingFaceEmbeddings:
 
 
 def load_vectorstore(config: AppConfig) -> FAISS:
+    """
+    يحمل FAISS الموجود فقط.
+    لا يعيد بناء الفهرس.
+    """
     index_path = config.vectorstore_path
-
-    if not index_path.exists():
-        raise FileNotFoundError(
-            f"Vector store folder not found: {index_path}"
-        )
 
     faiss_file = index_path / "index.faiss"
     pkl_file = index_path / "index.pkl"
+
+    if not index_path.exists():
+        raise FileNotFoundError(f"Vectorstore folder not found: {index_path}")
 
     if not faiss_file.exists():
         raise FileNotFoundError(f"Missing file: {faiss_file}")
@@ -162,10 +173,8 @@ def load_vectorstore(config: AppConfig) -> FAISS:
 
     embeddings = get_embeddings(config)
 
-    logger.info(f"Loading FAISS vector store from: {index_path}")
+    logger.info(f"Loading FAISS vectorstore from: {index_path}")
 
-    # ملاحظة أمنية:
-    # استخدم allow_dangerous_deserialization=True فقط مع index.pkl موثوق منك.
     return FAISS.load_local(
         str(index_path),
         embeddings,
@@ -173,10 +182,11 @@ def load_vectorstore(config: AppConfig) -> FAISS:
     )
 
 
-# =========================================================
-# Prompt — مطابق لكود Colab
-# =========================================================
 def get_prompt() -> ChatPromptTemplate:
+    """
+    نفس prompt الموجود في Colab.
+    لا تغيره إذا تريد نفس النتائج.
+    """
     return ChatPromptTemplate.from_messages([
         (
             "system",
@@ -204,10 +214,7 @@ Question:
     ])
 
 
-# =========================================================
-# Create RAG chain
-# =========================================================
-def create_rag_chain(config: AppConfig | None = None):
+def create_rag_chain(config: Optional[AppConfig] = None):
     config = config or AppConfig()
 
     vectorstore = load_vectorstore(config)
@@ -229,7 +236,9 @@ def create_rag_chain(config: AppConfig | None = None):
 
     def prepare_context(question: str) -> Dict[str, Any]:
         docs = retriever.invoke(question)
+
         docs = deduplicate_documents(docs)
+
         docs = rank_and_limit_documents(
             docs,
             max_sources=config.final_max_sources,
@@ -269,9 +278,6 @@ def create_rag_chain(config: AppConfig | None = None):
     return chain
 
 
-# =========================================================
-# Public ask function
-# =========================================================
 def answer_question(query: str, chain=None) -> Dict[str, Any]:
     query = (query or "").strip()
 
@@ -288,17 +294,3 @@ def answer_question(query: str, chain=None) -> Dict[str, Any]:
         "answer": result["answer"].strip(),
         "sources": result["sources"],
     }
-
-
-def answer_question_text(query: str, chain=None) -> str:
-    result = answer_question(query, chain=chain)
-
-    answer = result["answer"]
-    sources = result["sources"]
-
-    if sources:
-        return answer + "\n\nSources:\n" + "\n".join(
-            f"- {s}" for s in sources
-        )
-
-    return answer
