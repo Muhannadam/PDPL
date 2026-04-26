@@ -4,22 +4,23 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class AppConfig:
-    # Paths
     project_root: Path = Path(__file__).resolve().parent
+
+    # نفس أسماء المجلدات في GitHub
     data_folder: str = "data"
-    markdown_folder: str = "markdown"
     vectorstore_folder: str = "vectorstore"
     faiss_folder: str = "faiss_index"
+    markdown_folder: str = "markdown"
 
-    # Models — يجب أن تبقى مطابقة لكود Colab
+    # نفس موديلات كود Colab
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     groq_model: str = "llama-3.3-70b-versatile"
 
-    # Retrieval — يجب أن تبقى مطابقة لكود Colab
+    # نفس إعدادات الاسترجاع
     retrieval_k: int = 7
     final_max_sources: int = 4
 
-    # Generation
+    # نفس إعداد Groq
     temperature: float = 0.0
 
     @property
