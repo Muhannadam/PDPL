@@ -1,6 +1,14 @@
 streamlit
-groq
-faiss-cpu
+langchain
+langchain-core
+langchain-community
+langchain-groq
+langchain-huggingface
 sentence-transformers
+faiss-cpu
+transformers
+huggingface-hub
+torch
 numpy
-python-dotenv
+scikit-learn
+pydantic
