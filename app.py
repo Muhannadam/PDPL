@@ -14,74 +14,80 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     html, body, [class*="css"], .stApp {
-        direction: rtl;
-        text-align: right;
-        font-family: 'Tajawal', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 
     .stApp {
         background-color: #FAFAF7;
     }
 
+    /* Force readable text colors */
+    .stApp, .stApp p, .stApp span, .stApp div, .stApp label {
+        color: #1f2937;
+    }
+
     /* Header */
     .app-header {
         background: linear-gradient(135deg, #0F4C3A 0%, #1a6b54 100%);
-        padding: 1.5rem 2rem;
+        padding: 1.8rem 2rem;
         border-radius: 16px;
         margin-bottom: 1.5rem;
-        color: white;
         box-shadow: 0 4px 12px rgba(15, 76, 58, 0.15);
     }
 
     .app-header h1 {
-        color: white;
-        font-size: 1.8rem;
+        color: #ffffff !important;
+        font-size: 1.9rem;
         font-weight: 800;
-        margin: 0 0 0.3rem 0;
+        margin: 0 0 0.4rem 0;
     }
 
     .app-header p {
-        color: #d4e9e0;
+        color: #d4e9e0 !important;
         margin: 0;
         font-size: 0.95rem;
     }
 
-    /* Suggested question cards */
-    .suggestion-card {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 0.6rem;
-        cursor: pointer;
-        transition: all 0.2s;
+    /* Welcome state */
+    .welcome-box {
+        text-align: center;
+        padding: 2.5rem 1rem;
     }
 
-    .suggestion-card:hover {
-        border-color: #0F4C3A;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    .welcome-box h3 {
+        color: #0F4C3A !important;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-box p {
+        color: #6b7280 !important;
     }
 
     /* Source cards */
     .source-box {
-        background: white;
-        border-right: 3px solid #C9A961;
+        background: #ffffff;
+        border-left: 3px solid #C9A961;
         border-radius: 8px;
         padding: 0.8rem 1rem;
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
         line-height: 1.7;
+        color: #1f2937 !important;
     }
 
-    /* Disclaimer — smaller and softer */
+    .source-box b {
+        color: #0F4C3A !important;
+    }
+
+    /* Disclaimer */
     .disclaimer {
         font-size: 0.8rem;
-        color: #6b7280;
+        color: #6b7280 !important;
         text-align: center;
-        padding: 0.6rem;
+        padding: 0.8rem;
         border-top: 1px solid #e5e7eb;
         margin-top: 2rem;
     }
@@ -89,19 +95,46 @@ st.markdown(
     /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #ffffff;
-        border-left: 1px solid #e5e7eb;
+        border-right: 1px solid #e5e7eb;
+    }
+
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] h4 {
+        color: #0F4C3A !important;
+    }
+
+    /* Sidebar buttons */
+    [data-testid="stSidebar"] .stButton button {
+        background-color: #f9fafb;
+        color: #1f2937 !important;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: #0F4C3A;
+        color: #ffffff !important;
+        border-color: #0F4C3A;
     }
 
     /* Chat input */
     .stChatInput textarea {
-        font-family: 'Tajawal', sans-serif !important;
+        font-family: 'Inter', sans-serif !important;
         font-size: 1rem !important;
+        color: #1f2937 !important;
     }
 
+    /* Chat messages */
     .stChatMessage {
-        direction: rtl;
-        text-align: right;
         background: transparent;
+    }
+
+    .stChatMessage p,
+    .stChatMessage li,
+    .stChatMessage span {
+        color: #1f2937 !important;
     }
 
     /* Hide Streamlit default footer */
