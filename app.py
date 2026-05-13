@@ -6,7 +6,6 @@ from rag_core import create_rag_chain, answer_question
 
 st.set_page_config(
     page_title="PDPL Legal Assistant",
-    page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -78,7 +77,7 @@ def load_chain():
 
 
 with st.sidebar:
-    st.title("⚖️ PDPL Assistant")
+    st.title("PDPL Assistant")
 
     st.markdown("### حالة النظام")
 
