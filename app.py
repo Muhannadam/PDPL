@@ -120,64 +120,40 @@ def load_chain():
 
 
 with st.sidebar:
-    st.title("PDPL Assistant")
-
-    st.markdown("### حالة النظام")
-
-    config = AppConfig()
-
+    st.markdown("### ⚖️ المساعد القانوني")
     st.markdown(
-        f"""
-        <div class="metric-box">
-        <b>Vectorstore</b><br>
-        <span style="direction:ltr; display:block; text-align:left;">
-        {config.vectorstore_path}
-        </span>
-        </div>
-        """,
+        "<p style='color:#6b7280; font-size:0.9rem;'>مساعد ذكي متخصص في نظام حماية البيانات الشخصية السعودي (PDPL)</p>",
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        f"""
-        <div class="metric-box">
-        <b>Embedding Model</b><br>
-        <span style="direction:ltr; display:block; text-align:left;">
-        {config.embedding_model}
-        </span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.divider()
 
-    st.markdown(
-        f"""
-        <div class="metric-box">
-        <b>Groq Model</b><br>
-        <span style="direction:ltr; display:block; text-align:left;">
-        {config.groq_model}
-        </span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("#### 💡 أسئلة مقترحة")
+    suggested_questions = [
+        "ما هي حقوق صاحب البيانات الشخصية؟",
+        "متى يجب الإبلاغ عن تسرب البيانات؟",
+        "ما هي عقوبات مخالفة النظام؟",
+        "ما المقصود بالبيانات الحساسة؟",
+    ]
+
+    for q in suggested_questions:
+        if st.button(q, use_container_width=True, key=f"sq_{q}"):
+            st.session_state.pending_query = q
+            st.rerun()
+
+    st.divider()
 
     show_sources = st.toggle("إظهار المصادر", value=True)
 
-    if st.button("مسح المحادثة", use_container_width=True):
+    if st.button("🗑️ مسح المحادثة", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-
-st.markdown(
-    """
-    <div class="app-header">
-        <h1>⚖️ مساعد نظام حماية البيانات الشخصية</h1>
-        <p>إجابات مدعومة بالوثائق الرسمية لنظام PDPL السعودي</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+    with st.expander("⚙️ معلومات تقنية"):
+        config = AppConfig()
+        st.caption(f"**Embedding:** `{config.embedding_model}`")
+        st.caption(f"**LLM:** `{config.groq_model}`")
+        st.caption(f"**Index:** `{config.vectorstore_path}`")
 
 
 
@@ -251,7 +227,7 @@ if query:
 
                 if show_sources and sources:
                     with st.expander("المصادر"):
-                        for source in sources:
+                        for idx, source in enumerate(sources):
                             st.markdown(
                                 f'<div class="source-box"><b>📄 مصدر {idx + 1}:</b><br>{source}</div>',
                                 unsafe_allow_html=True,
