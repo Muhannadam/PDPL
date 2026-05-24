@@ -153,20 +153,20 @@ def load_chain():
 
 
 with st.sidebar:
-    st.markdown("### ⚖️ المساعد القانوني")
+    st.markdown("### PDPL Assistant")
     st.markdown(
-        "<p style='color:#6b7280; font-size:0.9rem;'>مساعد ذكي متخصص في نظام حماية البيانات الشخصية السعودي (PDPL)</p>",
+        "<p style='color:#6b7280; font-size:0.9rem;'>Intelligent Assistant specialized in the Saudi Personal Data Protection Law (PDPL).</p>",
         unsafe_allow_html=True,
     )
 
     st.divider()
 
-    st.markdown("#### 💡 أسئلة مقترحة")
+    st.markdown("#### Suggested Questions")
     suggested_questions = [
-        "ما هي حقوق صاحب البيانات الشخصية؟",
-        "متى يجب الإبلاغ عن تسرب البيانات؟",
-        "ما هي عقوبات مخالفة النظام؟",
-        "ما المقصود بالبيانات الحساسة؟",
+        "What are the rights of a data subject?",
+        "When must a data breach be reported?",
+        "What are the penalties for violating the regulation?",
+        "What is meant by sensitive data?",
     ]
 
     for q in suggested_questions:
@@ -176,13 +176,13 @@ with st.sidebar:
 
     st.divider()
 
-    show_sources = st.toggle("إظهار المصادر", value=True)
+    show_sources = st.toggle("Show sources", value=True)
 
-    if st.button("🗑️ مسح المحادثة", use_container_width=True):
+    if st.button("Clear conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-    with st.expander("⚙️ معلومات تقنية"):
+    with st.expander("Technical information"):
         config = AppConfig()
         st.caption(f"**Embedding:** `{config.embedding_model}`")
         st.caption(f"**LLM:** `{config.groq_model}`")
@@ -193,7 +193,7 @@ with st.sidebar:
 try:
     chain = load_chain()
 except Exception as exc:
-    st.error("تعذر تحميل النظام. تأكد من وجود ملفات index.faiss و index.pkl ومن إضافة GROQ_API_KEY في Secrets.")
+    st.error("System load failed. Ensure that the 'index.faiss' and 'index.pkl' files exist, and that the 'GROQ_API_KEY' has been added to Secrets.")
     st.exception(exc)
     st.stop()
 
@@ -205,9 +205,9 @@ if not st.session_state.messages:
     st.markdown(
         """
         <div style='text-align:center; padding:2rem 1rem; color:#6b7280;'>
-            <div style='font-size:3rem; margin-bottom:0.5rem;'>📜</div>
-            <h3 style='color:#0F4C3A; margin-bottom:0.5rem;'>كيف يمكنني مساعدتك اليوم؟</h3>
-            <p>اطرح سؤالك حول نظام حماية البيانات الشخصية، أو اختر سؤالًا من القائمة الجانبية.</p>
+            <div style='font-size:3rem; margin-bottom:0.5rem;'></div>
+            <h3 style='color:#0F4C3A; margin-bottom:0.5rem;'>How can I assist you today?</h3>
+            <p>Ask your question regarding the Personal Data Protection Law, or select a question from the sidebar.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -223,15 +223,15 @@ for message in st.session_state.messages:
             and show_sources
             and message.get("sources")
         ):
-            with st.expander("المصادر"):
+            with st.expander("Sources"):
                 for idx, source in enumerate(message["sources"]):
                     st.markdown(
-                        f'<div class="source-box"><b>📄 مصدر {idx + 1}:</b><br>{source}</div>',
+                        f'<div class="source-box"><b>Source {idx + 1}:</b><br>{source}</div>',
                         unsafe_allow_html=True,
                     )
 
 
-query = st.chat_input("اكتب سؤالك هنا...")
+query = st.chat_input("Enter your question here...")
 
 # Handle suggested question click from sidebar
 if "pending_query" in st.session_state:
@@ -249,7 +249,7 @@ if query:
         st.markdown(query)
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري البحث في الوثائق..."):
+        with st.spinner("Searching documents..."):
             try:
                 result = answer_question(query, chain=chain)
 
@@ -259,10 +259,10 @@ if query:
                 st.markdown(answer)
 
                 if show_sources and sources:
-                    with st.expander("المصادر"):
+                    with st.expander("Sources"):
                         for idx, source in enumerate(sources):
                             st.markdown(
-                                f'<div class="source-box"><b>📄 مصدر {idx + 1}:</b><br>{source}</div>',
+                                f'<div class="source-box"><b>Source {idx + 1}:</b><br>{source}</div>',
                                 unsafe_allow_html=True,
                             )
 
@@ -275,7 +275,7 @@ if query:
                 )
 
             except Exception as exc:
-                error_message = "حدث خطأ أثناء معالجة السؤال."
+                error_message = "An error occurred while processing the question."
 
                 st.error(error_message)
                 st.exception(exc)
@@ -291,7 +291,7 @@ if query:
 st.markdown(
     """
     <div class="disclaimer">
-        ⚠️ هذا المساعد لا يقدم استشارة قانونية ملزمة. يُرجى مراجعة مختص قانوني قبل اتخاذ أي قرار.
+        This assistant does not provide binding legal advice. Please consult a legal professional before making any decisions.
     </div>
     """,
     unsafe_allow_html=True,
