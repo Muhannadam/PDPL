@@ -48,10 +48,7 @@ def get_secret(key: str) -> str:
 
 
 def clean_text(text: str) -> str:
-    """
-    مطابق لكود Colab.
-    لا تغير هذه الدالة إذا تريد نفس النتائج.
-    """
+
     text = text.replace("\n", " ")
     text = re.sub(r"\s+", " ", text)
     text = re.sub(r"-\s*\d+\b", "", text)
@@ -59,9 +56,7 @@ def clean_text(text: str) -> str:
 
 
 def deduplicate_documents(docs: List[Document]) -> List[Document]:
-    """
-    مطابق لكود Colab.
-    """
+
     seen = set()
     unique_docs = []
 
@@ -84,9 +79,7 @@ def rank_and_limit_documents(
     docs: List[Document],
     max_sources: int = 4,
 ) -> List[Document]:
-    """
-    مطابق لكود Colab.
-    """
+
     selected = []
     seen_groups = set()
 
@@ -107,9 +100,7 @@ def rank_and_limit_documents(
 
 
 def format_sources(docs: List[Document]) -> List[str]:
-    """
-    مطابق لكود Colab.
-    """
+
     sources = []
 
     for d in docs:
@@ -129,9 +120,7 @@ def format_sources(docs: List[Document]) -> List[str]:
 
 
 def docs_to_context(docs: List[Document]) -> str:
-    """
-    مطابق لكود Colab.
-    """
+
     blocks = []
 
     for d in docs:
@@ -142,9 +131,7 @@ def docs_to_context(docs: List[Document]) -> str:
 
 
 def get_embeddings(config: AppConfig) -> HuggingFaceEmbeddings:
-    """
-    نفس embedding model ونفس normalize_embeddings.
-    """
+
     return HuggingFaceEmbeddings(
         model_name=config.embedding_model,
         model_kwargs={"device": "cpu"},
@@ -153,10 +140,7 @@ def get_embeddings(config: AppConfig) -> HuggingFaceEmbeddings:
 
 
 def load_vectorstore(config: AppConfig) -> FAISS:
-    """
-    يحمل FAISS الموجود فقط.
-    لا يعيد بناء الفهرس.
-    """
+
     index_path = config.vectorstore_path
 
     faiss_file = index_path / "index.faiss"
@@ -183,10 +167,7 @@ def load_vectorstore(config: AppConfig) -> FAISS:
 
 
 def get_prompt() -> ChatPromptTemplate:
-    """
-    نفس prompt الموجود في Colab.
-    لا تغيره إذا تريد نفس النتائج.
-    """
+
     return ChatPromptTemplate.from_messages([
         (
             "system",
