@@ -6,21 +6,19 @@ from pathlib import Path
 class AppConfig:
     project_root: Path = Path(__file__).resolve().parent
 
-    # نفس أسماء المجلدات في GitHub
+
     data_folder: str = "data"
     vectorstore_folder: str = "vectorstore"
     faiss_folder: str = "faiss_index"
     markdown_folder: str = "markdown"
 
-    # نفس موديلات كود Colab
+
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     groq_model: str = "llama-3.3-70b-versatile"
 
-    # نفس إعدادات الاسترجاع
     retrieval_k: int = 7
     final_max_sources: int = 4
 
-    # نفس إعداد Groq
     temperature: float = 0.0
 
     @property
